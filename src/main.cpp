@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 #include <rlImGui.h>
+#include "imguiThemes.h"
 
 int main()
 {
@@ -15,7 +16,20 @@ int main()
     ImGuiIO &io = ImGui::GetIO();
 
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.FontGlobalScale = 1.5;
+    io.FontGlobalScale = 1.0;
+    SetupImGuiAmberYellowStyle();
+
+    // vars
+    bool fullscreen = false;
+    bool vsync = true;
+    bool sound = true;
+
+    int input_int = 0;
+    float float_field[3] = { 0.0f, 0.0f, 0.0f };
+    float col[3] = { 0.0f, 0.0f, 0.0f };
+    float v_slided = 0.0f;
+    float col_4[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+
     #pragma endregion
 
     while(!WindowShouldClose())
@@ -41,9 +55,6 @@ int main()
         #pragma region imgui windows
         ImGui::Begin("Test");
 
-        ImGui::Text("Hello");
-        ImGui::Button("button");
-
         if(ImGui::Button("button")) {
             std::cout << "Text\n";
         }
@@ -51,6 +62,46 @@ int main()
         if(ImGui::Button("button2")) {
             std::cout << "different button\n";
         }
+        
+        // Checkbox
+        ImGui::Checkbox("Fullscreen", &fullscreen);
+        ImGui::Checkbox("VSync", &vsync);
+        ImGui::Checkbox("Sound", &sound);
+
+        // Radio button
+
+        ImGui::RadioButton("one", sound);
+        if (ImGui::CollapsingHeader("Tests"))
+        {
+        ImGui::InputInt("Input int Field", &input_int);
+
+        ImGui::DragFloat3("Drag Float field", float_field);
+        ImGui::VSliderFloat("vslider", ImVec2{30.0f,100.0f}, &v_slided, 0.0f, 20.0f, "%.3f");
+        
+        ImGui::ColorEdit3("Color Edit", col);
+        ImGui::ColorPicker4("Color picker", col_4);
+        ImGui::ProgressBar(0.5f, ImVec2{400, 20});
+        ImGui::CollapsingHeader("Header");
+
+
+        }
+
+        if(ImGui::TreeNode("Node"))  {
+            ImGui::Text("Node Element 1");
+            ImGui::Text("Node Element 2");
+            ImGui::Text("Node Element 3");
+
+            ImGui::TreePop();
+        }
+
+        ImGui::BeginChild("Scrollable", ImVec2(300, 200), true);
+
+        for (int i = 0; i < 50; i++)
+        {
+            ImGui::Text("Element %d", i);
+        }
+
+        ImGui::EndChild();
 
         ImGui::End();
 
@@ -61,6 +112,8 @@ int main()
         ImGui::NewLine();
         static float a = 0;
         ImGui::SliderFloat("slider", &a, 0, 1);
+
+
 
         ImGui::End();
         #pragma endregion
