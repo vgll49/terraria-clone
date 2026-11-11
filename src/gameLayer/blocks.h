@@ -59,6 +59,8 @@ struct Block
 		boneWordrobe,
 		boneBookShelf,
 		bonePlatform,
+		pearlstone,
+		mithril,
 
 		BLOCKS_COUNT,
 

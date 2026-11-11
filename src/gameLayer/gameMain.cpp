@@ -48,8 +48,8 @@ bool initGame()
     gameData.gameMap.getBlockUnsafe(0, 0).type = Block::dirt;
     gameData.gameMap.getBlockUnsafe(1, 1).type = Block::grass;
     gameData.gameMap.getBlockUnsafe(2, 2).type = Block::goldBlock;
-    gameData.gameMap.getBlockUnsafe(3, 3).type = Block::bricks;
-    gameData.gameMap.getBlockUnsafe(4, 4).type = Block::glass;
+    gameData.gameMap.getBlockUnsafe(3, 3).type = Block::pearlstone;
+    gameData.gameMap.getBlockUnsafe(4, 4).type = Block::mithril;
 
 	// Camera
 	gameData.camera.target = {0,0}; // world-space center of view
@@ -77,7 +77,30 @@ bool updateGame()
 
 #pragma endregion
 
+	Vector2 worldsPos = GetScreenToWorld2D(GetMousePosition(), gameData.camera);
+	int blockX = (int)floor(worldsPos.x);
+	int blockY = (int)floor(worldsPos.y);
 
+	if(IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+	{
+		auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
+
+		if(b)
+		{
+			*b =  {};
+		}
+	}
+
+	if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+	{
+		auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
+
+		if(b)
+		{
+			b->type = Block::gold;
+		}
+	}
+	
 	
 	BeginMode2D(gameData.camera);
 
@@ -108,6 +131,15 @@ bool updateGame()
 
 
 		}
+
+	DrawTexturePro(
+		assetManager.frame,
+		{0,0, (float)assetManager.frame.width, (float)assetManager.frame.height}, //source
+		{(float)blockX, (float)blockY, 1, 1}, //dest
+		{0, 0},// origin (top-left corner)
+		0.0f, // rotation
+		WHITE // tint
+	);
 
 	EndMode2D();
 	
