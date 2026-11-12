@@ -66,11 +66,11 @@ int main()
             CloseWindow();
         }
 
-
+        
 
         #pragma region imgui windows
         // ImGui::Begin("Test");
-
+        
         // if(ImGui::Button("button")) {
         //     std::cout << "Text\n";
         // }
@@ -132,6 +132,7 @@ int main()
 
 
         // ImGui::End();
+        renderImGui();
         #pragma endregion
 
         #pragma region imgui

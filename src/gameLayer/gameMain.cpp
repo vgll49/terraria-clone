@@ -7,6 +7,7 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#include <imgui.h>
 
 
 struct GameData 
@@ -14,6 +15,7 @@ struct GameData
     GameMap gameMap;
 	Camera2D camera;
 
+	Block selected_block;
 }gameData;
 
 AssetManager assetManager;
@@ -25,26 +27,6 @@ bool initGame()
 
 	gameData.gameMap.create(30, 30);
  
-	for (int y = 0; y < gameData.gameMap.h; y++)
-		for (int x = 0; x < gameData.gameMap.w; x++)
-		{
-			
-			float s = (std::sin(x) + 1.f) / 2.f;
-			float s2 = (std::sin(x * 0.5) + 1.f) / 2.f;
- 
-			if (gameData.gameMap.h - (gameData.gameMap.h * 0.3 * s) - gameData.gameMap.h * 0.5 -(gameData.gameMap.h * 0.2 * s2)
-			
-			< y)
-			{
-				gameData.gameMap.getBlockUnsafe(x, y).type = Block::dirt;
-			}
-			else
-			{
-				gameData.gameMap.getBlockUnsafe(x, y).type = Block::air;
-			}
-		}
-
-
     gameData.gameMap.getBlockUnsafe(0, 0).type = Block::dirt;
     gameData.gameMap.getBlockUnsafe(1, 1).type = Block::grass;
     gameData.gameMap.getBlockUnsafe(2, 2).type = Block::goldBlock;
@@ -57,6 +39,28 @@ bool initGame()
 	gameData.camera.zoom = 100.0f;
 
     return true;
+}
+
+void renderImGui() {
+	ImGui::Begin("Block Selector");
+        
+	if(ImGui::Button("button")) {
+		std::cout << "Text\n";
+	}
+
+	if(ImGui::Button("button2")) {
+		std::cout << "different button\n";
+	}
+        
+    ImGui::InputInt("Block", (int *)&gameData.selected_block.type);
+
+	if (gameData.selected_block.type > Block::BLOCKS_COUNT) 
+		gameData.selected_block.type = Block::BLOCKS_COUNT;
+
+	if (gameData.selected_block.type < 1)
+		gameData.selected_block.type = 1;
+
+	ImGui::End();
 }
 
 bool updateGame()
@@ -73,13 +77,15 @@ bool updateGame()
 	if(IsKeyDown(KEY_RIGHT)) gameData.camera.target.x += 7.f * deltaTime;
 	if(IsKeyDown(KEY_UP)) gameData.camera.target.y -= 7.f * deltaTime;
 	if(IsKeyDown(KEY_DOWN)) gameData.camera.target.y += 7.f * deltaTime;
-
+	if(IsKeyPressed(KEY_PAGE_UP)) gameData.camera.zoom += 10.0f;
+	if(IsKeyPressed(KEY_PAGE_DOWN)) gameData.camera.zoom -= 10.0f;
 
 #pragma endregion
 
 	Vector2 worldsPos = GetScreenToWorld2D(GetMousePosition(), gameData.camera);
 	int blockX = (int)floor(worldsPos.x);
 	int blockY = (int)floor(worldsPos.y);
+	 
 
 	if(IsMouseButtonDown(MOUSE_BUTTON_LEFT))
 	{
@@ -97,7 +103,7 @@ bool updateGame()
 
 		if(b)
 		{
-			b->type = Block::gold;
+			b->type = gameData.selected_block.type;
 		}
 	}
 	
