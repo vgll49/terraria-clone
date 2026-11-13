@@ -61,6 +61,7 @@ struct Block
 		bonePlatform,
 		pearlstone,
 		mithril,
+		cherryLeaves,
 
 		BLOCKS_COUNT,
 
@@ -69,4 +70,18 @@ struct Block
     std::uint16_t type = 0;
 
 
+};
+
+struct BackgroundBlock
+{
+    enum
+    {
+        dirtWall = 0,
+        stoneWall,
+        woodWall,
+       
+        BACKGROUND_BLOCKS_COUNT
+    };
+
+    std::uint16_t type = 0;
 };

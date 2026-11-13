@@ -27,25 +27,36 @@ bool initGame()
     assetManager.loadAll();
 
 	gameData.gameMap.create(700, 500);
-
-	for(int i = 0; i < 700; i++)
-		for(int j = 0; j < 500; j++)
-		{
-			gameData.gameMap.getBlockUnsafe(i, j).type = Block::mithril;
-			
-
-		}
  
-    gameData.gameMap.getBlockUnsafe(0, 0).type = Block::dirt;
-    gameData.gameMap.getBlockUnsafe(1, 1).type = Block::grass;
-    gameData.gameMap.getBlockUnsafe(2, 2).type = Block::goldBlock;
-    gameData.gameMap.getBlockUnsafe(3, 3).type = Block::pearlstone;
-    gameData.gameMap.getBlockUnsafe(4, 4).type = Block::mithril;
+    gameData.gameMap.getBlockUnsafe(0, 0).type = Block::leaves;
+    gameData.gameMap.getBlockUnsafe(1, 1).type = Block::leaves;
+    gameData.gameMap.getBlockUnsafe(2, 2).type = Block::leaves;
+    gameData.gameMap.getBlockUnsafe(3, 3).type = Block::leaves;
+    gameData.gameMap.getBlockUnsafe(4, 4).type = Block::leaves;
 
+
+	gameData.gameMap.getBlockUnsafe(9, 20).type = Block::leaves;
+	gameData.gameMap.getBlockUnsafe(10, 20).type = Block::woodLog;
+	gameData.gameMap.getBlockUnsafe(11, 20).type = Block::leaves;
+	gameData.gameMap.getBlockUnsafe(9, 21).type = Block::leaves;
+	gameData.gameMap.getBlockUnsafe(10, 21).type = Block::woodLog;
+	gameData.gameMap.getBlockUnsafe(11, 21).type = Block::leaves;
+	gameData.gameMap.getBlockUnsafe(9, 22).type = Block::leaves;
+	gameData.gameMap.getBlockUnsafe(10, 22).type = Block::woodLog;
+	gameData.gameMap.getBlockUnsafe(11, 22).type = Block::leaves;
+	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
+	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
+	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
+	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
+	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
+	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
+
+    
+	
 	// Camera
 	gameData.camera.target = {0,0}; // world-space center of view
 	gameData.camera.rotation = 0.0f;
-	gameData.camera.zoom = 100.0f;
+	gameData.camera.zoom = 50.0f;
 
     return true;
 }
@@ -62,6 +73,7 @@ void renderImGui() {
 	}
         
     ImGui::InputInt("Block", (int *)&gameData.selected_block.type);
+	ImGui::InputInt("Background Blocks", (int *)&gameData.selected_block.type);
 
 	if (gameData.selected_block.type > Block::BLOCKS_COUNT) 
 		gameData.selected_block.type = Block::BLOCKS_COUNT;
@@ -131,7 +143,7 @@ bool updateGame()
 	endXView = Clamp(endXView, 0, gameData.gameMap.w-1);
 
 	startYView = Clamp(startYView, 0, gameData.gameMap.h-1);
-	endXView = Clamp(endXView, 0, gameData.gameMap.h-1);
+	endYView = Clamp(endYView, 0, gameData.gameMap.h-1);
 	
 	for (int y = startYView; y < endYView; y++)
 		for (int x = startXView; x < endXView; x++)
@@ -142,21 +154,71 @@ bool updateGame()
 
 			if (b.type != Block::air)
 			{
-				Rectangle textureUV;
-				textureUV.width = 32;
-				textureUV.height = 32;
-				textureUV.x = b.type * 32;
-				textureUV.y = 0;
+				if(b.type == Block::woodLog)  
+				{
+					Rectangle atlas_source = getTextureAtlas(0, 0, 32, 32);
+					// 1. get blocks around
+					Block *bLeft = gameData.gameMap.getBlockSafe(x-1, y);
+					Block *bRight = gameData.gameMap.getBlockSafe(x+1, y);
+					Block *bTop= gameData.gameMap.getBlockSafe(x, y-1);
+					Block *bBottom = gameData.gameMap.getBlockSafe(x, y+1);
 
-				DrawTexturePro(
-					assetManager.textures,
-					getTextureAtlas(b.type, 0, 32, 32), //source
-					{(float)x, (float)y, 1, 1}, //dest
-					{0, 0},// origin (top-left corner)
-					0.0f, // rotation
-					WHITE // tint
-				);
+					// handle the cases and render block based on this
+					
+					if(bTop->type == Block::woodLog && bBottom->type != Block::woodLog) {
+						atlas_source = getTextureAtlas(4, 0, 32, 32);
+						
+					}
 
+					if(bLeft->type == Block::leaves) {
+						atlas_source = getTextureAtlas(3, 0, 32, 32);
+						
+					} 
+
+					if(bRight->type == Block::leaves) {
+						atlas_source = getTextureAtlas(2, 0, 32, 32);
+					}
+
+					if(bRight->type == Block::leaves && bLeft->type == Block::leaves) {
+						atlas_source = getTextureAtlas(1, 0, 32, 32);
+					}
+					
+					if(bTop->type == Block::leaves && bBottom->type != Block::leaves) {
+						atlas_source = getTextureAtlas(5, 0, 32, 32);
+					}
+					
+					if(bTop->type != Block::leaves && bTop->type != Block::woodLog &&  bRight->type != Block::leaves && bLeft->type != Block::leaves && bBottom->type == Block::woodLog) {
+						atlas_source = getTextureAtlas(6, 0, 32, 32);
+					}
+
+					if(bTop->type != Block::leaves && bTop->type != Block::woodLog && bBottom->type != Block::woodLog && bBottom->type != Block::leaves) {
+						atlas_source = getTextureAtlas(7, 0, 32, 32);
+					}
+
+
+					DrawTexturePro(
+						assetManager.tree_textures,
+						atlas_source, //source
+						{(float)x, (float)y, 1, 1}, //dest
+						{0, 0},// origin (top-left corner)
+						0.0f, // rotation
+						WHITE // tint
+					);
+					// later: just add colored leaves to atlas ? then render based on this, move this to other func
+					
+				
+				} else {
+
+			
+					DrawTexturePro(
+						assetManager.textures,
+						getTextureAtlas(b.type, 0, 32, 32), //source
+						{(float)x, (float)y, 1, 1}, //dest
+						{0, 0},// origin (top-left corner)
+						0.0f, // rotation
+						WHITE // tint
+					);
+				}
 			}
 
 

@@ -8,6 +8,7 @@ struct GameMap
     int h = 0;
 
     std::vector<Block> mapData;
+    std::vector<Block> backgroundMapData;
 
     void create(int w, int h);
 
