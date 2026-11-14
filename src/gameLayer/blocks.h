@@ -62,6 +62,27 @@ struct Block
 		pearlstone,
 		mithril,
 		cherryLeaves,
+		dirtWall,
+		stoneWall, 
+		woodWall,
+		sandStoneWall,
+		brickWall, 
+		glassWall,  
+		copperBlockWall, 
+		silverBlockWall, 
+		goldBlockWall, 
+		snowWall, 
+		sandWall, 
+		stoneBricksWall, 
+		rubyBlockWall, 
+		heroglyphWall, 
+		blueRubyWall, 
+		plankedWall, 
+		snowBrickWall, 
+		boneBrickWall,
+		pearlstoneWall,
+		mithrilWall,
+		cherryLeavesWall,
 
 		BLOCKS_COUNT,
 
@@ -72,16 +93,34 @@ struct Block
 
 };
 
-struct BackgroundBlock
+inline bool isWallBlock(std::uint16_t type)
 {
-    enum
+    switch (type)
     {
-        dirtWall = 0,
-        stoneWall,
-        woodWall,
-       
-        BACKGROUND_BLOCKS_COUNT
-    };
+        case Block::dirtWall:
+        case Block::stoneWall:
+        case Block::woodWall:
+        case Block::sandStoneWall:
+        case Block::brickWall:
+        case Block::glassWall:
+        case Block::copperBlockWall:
+        case Block::silverBlockWall:
+        case Block::goldBlockWall:
+        case Block::snowWall:
+        case Block::sandWall:
+        case Block::stoneBricksWall:
+        case Block::rubyBlockWall:
+        case Block::heroglyphWall:
+        case Block::blueRubyWall:
+        case Block::plankedWall:
+        case Block::snowBrickWall:
+        case Block::boneBrickWall:
+        case Block::pearlstoneWall:
+        case Block::mithrilWall:
+        case Block::cherryLeavesWall:
+            return true;
 
-    std::uint16_t type = 0;
-};
+        default:
+            return false;
+    }
+}

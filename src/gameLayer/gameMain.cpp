@@ -63,20 +63,16 @@ bool initGame()
 
 void renderImGui() {
 	ImGui::Begin("Block Selector");
-        
-	if(ImGui::Button("button")) {
-		std::cout << "Text\n";
-	}
-
-	if(ImGui::Button("button2")) {
-		std::cout << "different button\n";
-	}
-        
+                
     ImGui::InputInt("Block", (int *)&gameData.selected_block.type);
-	ImGui::InputInt("Background Blocks", (int *)&gameData.selected_block.type);
+	
+	
+	if(ImGui::Button("Background Block")) {
+		gameData.selected_block.type = Block::BLOCKS_COUNT-1;
+	}
 
-	if (gameData.selected_block.type > Block::BLOCKS_COUNT) 
-		gameData.selected_block.type = Block::BLOCKS_COUNT;
+	if (gameData.selected_block.type > Block::BLOCKS_COUNT-1) 
+		gameData.selected_block.type = Block::BLOCKS_COUNT-1;
 
 	if (gameData.selected_block.type < 1)
 		gameData.selected_block.type = 1;
@@ -108,20 +104,29 @@ bool updateGame()
 	int blockY = (int)floor(worldsPos.y);
 	 
 
-	if(IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
-		auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
-
-		if(b)
+		// TODO: later adapt this to some kind of mining system. So that IsMouseButtonDown and the layer does not change or some other way
+		if (auto* b = gameData.gameMap.getBlockSafe(blockX, blockY);
+			b && b->type != Block::air)
 		{
-			*b =  {};
+			*b = {};
+		}
+		else if (auto* b = gameData.gameMap.getBlockSafe(
+					blockX, blockY, MapLayer::Background);
+				b && b->type != Block::air)
+		{
+			*b = {};
 		}
 	}
 
 	if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 	{
 		auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
-
+		if(isWallBlock(gameData.selected_block.type)) {
+			b = gameData.gameMap.getBlockSafe(blockX, blockY, MapLayer::Background);
+		}
+		
 		if(b)
 		{
 			b->type = gameData.selected_block.type;
@@ -149,8 +154,19 @@ bool updateGame()
 		for (int x = startXView; x < endXView; x++)
 		{
 			
-
 			auto &b = gameData.gameMap.getBlockUnsafe(x, y);
+			auto &bB = gameData.gameMap.getBlockUnsafe(x, y, MapLayer::Background);
+
+			if(bB.type != Block::air) {
+				DrawTexturePro(
+						assetManager.textures,
+						getTextureAtlas(bB.type, 0, 32, 32), //source
+						{(float)x, (float)y, 1, 1}, //dest
+						{0, 0},// origin (top-left corner)
+						0.0f, // rotation
+						WHITE // tint
+					);
+			}
 
 			if (b.type != Block::air)
 			{
@@ -195,7 +211,6 @@ bool updateGame()
 						atlas_source = getTextureAtlas(7, 0, 32, 32);
 					}
 
-
 					DrawTexturePro(
 						assetManager.tree_textures,
 						atlas_source, //source
@@ -204,12 +219,8 @@ bool updateGame()
 						0.0f, // rotation
 						WHITE // tint
 					);
-					// later: just add colored leaves to atlas ? then render based on this, move this to other func
-					
-				
-				} else {
 
-			
+				} else {			
 					DrawTexturePro(
 						assetManager.textures,
 						getTextureAtlas(b.type, 0, 32, 32), //source
@@ -220,8 +231,6 @@ bool updateGame()
 					);
 				}
 			}
-
-
 		}
 
 	DrawTexturePro(
