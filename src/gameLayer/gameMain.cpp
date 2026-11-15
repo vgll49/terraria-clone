@@ -5,7 +5,7 @@
 #include <assetManager.h>
 #include <gameMap.h>
 #include <helpers.h>
-#include <math.h>
+#include <randomStuff.h>
 #include <iostream>
 #include <fstream>
 #include <imgui.h>
@@ -122,14 +122,19 @@ bool updateGame()
 
 	if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 	{
-		auto b = gameData.gameMap.getBlockSafe(blockX, blockY);
-		if(isWallBlock(gameData.selected_block.type)) {
-			b = gameData.gameMap.getBlockSafe(blockX, blockY, MapLayer::Background);
-		}
+		uint64_t seed = hashCoordinates(blockX, blockY);
+		std::ranlux24_base rng(seed);
+		int blockVariation = getRandomInt(rng, 0, 3);
 		
-		if(b)
+		auto* b = gameData.gameMap.getBlockSafe(blockX, blockY);
+
+		if (isWallBlock(gameData.selected_block.type))
+			b = gameData.gameMap.getBlockSafe(blockX, blockY, MapLayer::Background);
+
+		if (b)
 		{
 			b->type = gameData.selected_block.type;
+			b->variation = blockVariation;
 		}
 	}
 	
@@ -154,13 +159,20 @@ bool updateGame()
 		for (int x = startXView; x < endXView; x++)
 		{
 			
+
+
+
+			
+
+
+			
 			auto &b = gameData.gameMap.getBlockUnsafe(x, y);
 			auto &bB = gameData.gameMap.getBlockUnsafe(x, y, MapLayer::Background);
 
 			if(bB.type != Block::air) {
 				DrawTexturePro(
 						assetManager.textures,
-						getTextureAtlas(bB.type, 0, 32, 32), //source
+						getTextureAtlas(bB.type, bB.variation, 32, 32), //source
 						{(float)x, (float)y, 1, 1}, //dest
 						{0, 0},// origin (top-left corner)
 						0.0f, // rotation
@@ -172,7 +184,7 @@ bool updateGame()
 			{
 				if(b.type == Block::woodLog)  
 				{
-					Rectangle atlas_source = getTextureAtlas(0, 0, 32, 32);
+					Rectangle atlas_source = getTextureAtlas(0, bB.variation, 32, 32);
 					// 1. get blocks around
 					Block *bLeft = gameData.gameMap.getBlockSafe(x-1, y);
 					Block *bRight = gameData.gameMap.getBlockSafe(x+1, y);
@@ -182,33 +194,33 @@ bool updateGame()
 					// handle the cases and render block based on this
 					
 					if(bTop->type == Block::woodLog && bBottom->type != Block::woodLog) {
-						atlas_source = getTextureAtlas(4, 0, 32, 32);
+						atlas_source = getTextureAtlas(4, b.variation, 32, 32);
 						
 					}
 
 					if(bLeft->type == Block::leaves) {
-						atlas_source = getTextureAtlas(3, 0, 32, 32);
+						atlas_source = getTextureAtlas(3, b.variation, 32, 32);
 						
 					} 
 
 					if(bRight->type == Block::leaves) {
-						atlas_source = getTextureAtlas(2, 0, 32, 32);
+						atlas_source = getTextureAtlas(2, b.variation, 32, 32);
 					}
 
 					if(bRight->type == Block::leaves && bLeft->type == Block::leaves) {
-						atlas_source = getTextureAtlas(1, 0, 32, 32);
+						atlas_source = getTextureAtlas(1, b.variation, 32, 32);
 					}
 					
 					if(bTop->type == Block::leaves && bBottom->type != Block::leaves) {
-						atlas_source = getTextureAtlas(5, 0, 32, 32);
+						atlas_source = getTextureAtlas(5, b.variation, 32, 32);
 					}
 					
 					if(bTop->type != Block::leaves && bTop->type != Block::woodLog &&  bRight->type != Block::leaves && bLeft->type != Block::leaves && bBottom->type == Block::woodLog) {
-						atlas_source = getTextureAtlas(6, 0, 32, 32);
+						atlas_source = getTextureAtlas(6, b.variation, 32, 32);
 					}
 
 					if(bTop->type != Block::leaves && bTop->type != Block::woodLog && bBottom->type != Block::woodLog && bBottom->type != Block::leaves) {
-						atlas_source = getTextureAtlas(7, 0, 32, 32);
+						atlas_source = getTextureAtlas(7, b.variation, 32, 32);
 					}
 
 					DrawTexturePro(
@@ -223,7 +235,7 @@ bool updateGame()
 				} else {			
 					DrawTexturePro(
 						assetManager.textures,
-						getTextureAtlas(b.type, 0, 32, 32), //source
+						getTextureAtlas(b.type, b.variation, 32, 32), //source
 						{(float)x, (float)y, 1, 1}, //dest
 						{0, 0},// origin (top-left corner)
 						0.0f, // rotation
