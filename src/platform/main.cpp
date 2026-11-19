@@ -133,7 +133,6 @@ int main()
 
 
         // ImGui::End();
-        renderImGui();
         #pragma endregion
 
         #pragma region imgui

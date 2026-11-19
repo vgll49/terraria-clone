@@ -89,6 +89,8 @@ struct Block
 	};
 
     std::uint16_t type = 0;
+
+	// TODO: use this later to let player also decide what kind of variation to place
 	std::uint8_t variation = 0;
 
 

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <imgui.h>
+#include <worldGenerator.h>
 
 
 struct GameData 
@@ -26,31 +27,7 @@ bool initGame()
 
     assetManager.loadAll();
 
-	gameData.gameMap.create(700, 500);
- 
-    gameData.gameMap.getBlockUnsafe(0, 0).type = Block::leaves;
-    gameData.gameMap.getBlockUnsafe(1, 1).type = Block::leaves;
-    gameData.gameMap.getBlockUnsafe(2, 2).type = Block::leaves;
-    gameData.gameMap.getBlockUnsafe(3, 3).type = Block::leaves;
-    gameData.gameMap.getBlockUnsafe(4, 4).type = Block::leaves;
-
-
-	gameData.gameMap.getBlockUnsafe(9, 20).type = Block::leaves;
-	gameData.gameMap.getBlockUnsafe(10, 20).type = Block::woodLog;
-	gameData.gameMap.getBlockUnsafe(11, 20).type = Block::leaves;
-	gameData.gameMap.getBlockUnsafe(9, 21).type = Block::leaves;
-	gameData.gameMap.getBlockUnsafe(10, 21).type = Block::woodLog;
-	gameData.gameMap.getBlockUnsafe(11, 21).type = Block::leaves;
-	gameData.gameMap.getBlockUnsafe(9, 22).type = Block::leaves;
-	gameData.gameMap.getBlockUnsafe(10, 22).type = Block::woodLog;
-	gameData.gameMap.getBlockUnsafe(11, 22).type = Block::leaves;
-	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
-	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
-	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
-	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
-	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
-	gameData.gameMap.getBlockUnsafe(10, 23).type = Block::woodLog;
-
+	generateWorld(gameData.gameMap);
     
 	
 	// Camera
@@ -61,24 +38,7 @@ bool initGame()
     return true;
 }
 
-void renderImGui() {
-	ImGui::Begin("Block Selector");
-                
-    ImGui::InputInt("Block", (int *)&gameData.selected_block.type);
-	
-	
-	if(ImGui::Button("Background Block")) {
-		gameData.selected_block.type = Block::BLOCKS_COUNT-1;
-	}
 
-	if (gameData.selected_block.type > Block::BLOCKS_COUNT-1) 
-		gameData.selected_block.type = Block::BLOCKS_COUNT-1;
-
-	if (gameData.selected_block.type < 1)
-		gameData.selected_block.type = 1;
-
-	ImGui::End();
-}
 
 bool updateGame()
 {
@@ -89,11 +49,13 @@ bool updateGame()
 
 	ClearBackground({75, 75, 150, 255});
 
+	static float CAMERA_SPEED = 10;
+
 #pragma region camera movement
-	if(IsKeyDown(KEY_LEFT)) gameData.camera.target.x -= 7.f * deltaTime;
-	if(IsKeyDown(KEY_RIGHT)) gameData.camera.target.x += 7.f * deltaTime;
-	if(IsKeyDown(KEY_UP)) gameData.camera.target.y -= 7.f * deltaTime;
-	if(IsKeyDown(KEY_DOWN)) gameData.camera.target.y += 7.f * deltaTime;
+	if(IsKeyDown(KEY_LEFT)) gameData.camera.target.x -= CAMERA_SPEED * deltaTime;
+	if(IsKeyDown(KEY_RIGHT)) gameData.camera.target.x += CAMERA_SPEED * deltaTime;
+	if(IsKeyDown(KEY_UP)) gameData.camera.target.y -= CAMERA_SPEED * deltaTime;
+	if(IsKeyDown(KEY_DOWN)) gameData.camera.target.y += CAMERA_SPEED * deltaTime;
 	if(IsKeyPressed(KEY_PAGE_UP)) gameData.camera.zoom += 10.0f;
 	if(IsKeyPressed(KEY_PAGE_DOWN)) gameData.camera.zoom -= 10.0f;
 
@@ -255,11 +217,35 @@ bool updateGame()
 	);
 
 	EndMode2D();
+
+	ImGui::Begin("Block Selector");
+                
+    ImGui::InputInt("Block", (int *)&gameData.selected_block.type);
+	
+	
+	if(ImGui::Button("Background Block")) {
+		gameData.selected_block.type = Block::BLOCKS_COUNT-1;
+	}
+
+	if (gameData.selected_block.type > Block::BLOCKS_COUNT-1) 
+		gameData.selected_block.type = Block::BLOCKS_COUNT-1;
+
+	if (gameData.selected_block.type < 1)
+		gameData.selected_block.type = 1;
+
+
+	ImGui::SliderFloat("Camera zoom:", &gameData.camera.zoom, 10, 150);
+	ImGui::SliderFloat("Camera speed:", &CAMERA_SPEED, 5, 100);
+
+	ImGui::End();
 	
 	DrawFPS(10, 10);
 
 	return true;
 }
+
+
+
 void closeGame()
 {
     std::ofstream f(RESOURCES_PATH "f.txt");
