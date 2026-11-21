@@ -11,6 +11,10 @@
 #include <imgui.h>
 #include <worldGenerator.h>
 
+	int dirtOctaves = 1;
+	float dirtFrequency = 0.02;
+	int stoneOctaves = 4;
+	float stoneFrequency = 0.01;
 
 struct GameData 
 {
@@ -22,18 +26,20 @@ struct GameData
 
 AssetManager assetManager;
 
-bool initGame()
+bool initGame(int dirtOctaves, float dirtFrequency, int stoneOctaves, float stoneFrequency)
 {
 
     assetManager.loadAll();
 
-	generateWorld(gameData.gameMap);
+	int seed = 1234;
+
+	generateWorld(gameData.gameMap, seed, dirtOctaves, dirtFrequency, stoneOctaves, stoneFrequency);
     
 	
 	// Camera
-	gameData.camera.target = {0,0}; // world-space center of view
+	gameData.camera.target = {20, 120}; // world-space center of view
 	gameData.camera.rotation = 0.0f;
-	gameData.camera.zoom = 50.0f;
+	gameData.camera.zoom = 10.0f;
 
     return true;
 }
@@ -49,7 +55,7 @@ bool updateGame()
 
 	ClearBackground({75, 75, 150, 255});
 
-	static float CAMERA_SPEED = 10;
+	static float CAMERA_SPEED = 100;
 
 #pragma region camera movement
 	if(IsKeyDown(KEY_LEFT)) gameData.camera.target.x -= CAMERA_SPEED * deltaTime;
@@ -80,6 +86,9 @@ bool updateGame()
 		{
 			*b = {};
 		}
+
+		std::cout << "Block X: " << blockX
+          << " | Block Y: " << blockY << '\n';
 	}
 
 	if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
@@ -218,7 +227,7 @@ bool updateGame()
 
 	EndMode2D();
 
-	ImGui::Begin("Block Selector");
+	ImGui::Begin("Debug Stuff");
                 
     ImGui::InputInt("Block", (int *)&gameData.selected_block.type);
 	
@@ -233,9 +242,29 @@ bool updateGame()
 	if (gameData.selected_block.type < 1)
 		gameData.selected_block.type = 1;
 
-
 	ImGui::SliderFloat("Camera zoom:", &gameData.camera.zoom, 10, 150);
 	ImGui::SliderFloat("Camera speed:", &CAMERA_SPEED, 5, 100);
+
+
+	ImGui::SliderInt("dirtOctaves", &dirtOctaves, 1, 10);
+	ImGui::SliderFloat("dirtFrequency", &dirtFrequency, 0.00, 1.0);
+	ImGui::SliderInt("stoneOctaves", &stoneOctaves, 1, 10);
+	ImGui::SliderFloat("stoneFrequency", &stoneFrequency, 0.00, 1.0);
+
+
+	if (ImGui::Button("Reinit world"))
+	{
+		generateWorld(
+			gameData.gameMap,
+			1234,
+			dirtOctaves,
+			dirtFrequency,
+			stoneOctaves,
+			stoneFrequency
+		);
+	}
+
+
 
 	ImGui::End();
 	

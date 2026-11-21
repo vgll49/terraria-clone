@@ -14,9 +14,10 @@ int main()
         SetTraceLogLevel(LOG_NONE); // no raylib log output on the console
     #endif
 
-
+    SetTraceLogLevel(LOG_NONE);
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(800, 450, "Gothic");
+    MaximizeWindow();
 
     #pragma region imgui
     rlImGuiSetup(true);
