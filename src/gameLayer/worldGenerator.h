@@ -1,23 +1,32 @@
 #pragma once
 #include "gameMap.h"
+#include "blocks.h"
 
-enum class BiomeType {
-    Plains,
-    Mountains,
-    Desert,
-};
+// enum class BiomeType {
+//     Plains,
+//     Mountains,
+//     Desert,
+// };
 
-struct BiomeDefinition {
-    BiomeType type;
-    int minSize;
-    int maxSize;
+// struct BiomeDefinition {
+//     BiomeType type;
+//     int minSize;
+//     int maxSize;
 
-};
+//     Block surface;
+//     Block underground;
+//     Block deepUnderground;
 
-struct Biome {
-    BiomeType type;
-    int startX;
-    int actualSize;
-};
+// };
 
-void generateWorld(GameMap &gameMap, int seed = 1234, int dirtOctaves = 1, float dirtFrequency = 0.02, int stoneOctaves = 4, float stoneFrequency = 0.01);
+// struct Biome {
+//     BiomeType type;
+//     int startX;
+//     int size;
+
+//     Block surface;
+//     Block underground;
+//     Block deepUnderground;
+// };
+
+void generateWorld(GameMap &gameMap, int seed = 1234);

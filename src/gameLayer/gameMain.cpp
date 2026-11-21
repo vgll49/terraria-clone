@@ -11,11 +11,6 @@
 #include <imgui.h>
 #include <worldGenerator.h>
 
-	int dirtOctaves = 1;
-	float dirtFrequency = 0.02;
-	int stoneOctaves = 4;
-	float stoneFrequency = 0.01;
-
 struct GameData 
 {
     GameMap gameMap;
@@ -26,16 +21,13 @@ struct GameData
 
 AssetManager assetManager;
 
-bool initGame(int dirtOctaves, float dirtFrequency, int stoneOctaves, float stoneFrequency)
+bool initGame()
 {
 
     assetManager.loadAll();
 
-	int seed = 1234;
-
-	generateWorld(gameData.gameMap, seed, dirtOctaves, dirtFrequency, stoneOctaves, stoneFrequency);
-    
-	
+	generateWorld(gameData.gameMap);
+    	
 	// Camera
 	gameData.camera.target = {20, 120}; // world-space center of view
 	gameData.camera.rotation = 0.0f;
@@ -43,8 +35,6 @@ bool initGame(int dirtOctaves, float dirtFrequency, int stoneOctaves, float ston
 
     return true;
 }
-
-
 
 bool updateGame()
 {
@@ -129,14 +119,7 @@ bool updateGame()
 	for (int y = startYView; y < endYView; y++)
 		for (int x = startXView; x < endXView; x++)
 		{
-			
 
-
-
-			
-
-
-			
 			auto &b = gameData.gameMap.getBlockUnsafe(x, y);
 			auto &bB = gameData.gameMap.getBlockUnsafe(x, y, MapLayer::Background);
 
@@ -244,27 +227,6 @@ bool updateGame()
 
 	ImGui::SliderFloat("Camera zoom:", &gameData.camera.zoom, 10, 150);
 	ImGui::SliderFloat("Camera speed:", &CAMERA_SPEED, 5, 100);
-
-
-	ImGui::SliderInt("dirtOctaves", &dirtOctaves, 1, 10);
-	ImGui::SliderFloat("dirtFrequency", &dirtFrequency, 0.00, 1.0);
-	ImGui::SliderInt("stoneOctaves", &stoneOctaves, 1, 10);
-	ImGui::SliderFloat("stoneFrequency", &stoneFrequency, 0.00, 1.0);
-
-
-	if (ImGui::Button("Reinit world"))
-	{
-		generateWorld(
-			gameData.gameMap,
-			1234,
-			dirtOctaves,
-			dirtFrequency,
-			stoneOctaves,
-			stoneFrequency
-		);
-	}
-
-
 
 	ImGui::End();
 	
