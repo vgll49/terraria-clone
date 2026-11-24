@@ -5,6 +5,12 @@
 #include <iostream>
 #include <algorithm>
 
+/*
+TODOS:
+1. Tweak noises for caves (maybe use cellular etc. again and combine with noise that chooses between)
+2. Implement function for different perlinWorm usages, maybe based on biome/surface
+3. rm debug stuff
+*/
 
 float lerp(float a, float b, float t)
 {
@@ -49,21 +55,6 @@ void generateWorld(GameMap &gameMap, int seed)
 	simplexCavesNoiseGenerator->SetFractalOctaves(3);
 	simplexCavesNoiseGenerator->SetFrequency(0.02f);
 	
-	cellularCavesNoiseGenerator->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
-	cellularCavesNoiseGenerator->SetFrequency(0.1f);
-
-	cellularCavesNoiseGenerator->SetCellularDistanceFunction(
-		FastNoiseSIMD::CellularDistanceFunction::Euclidean
-	);
-
-	cellularCavesNoiseGenerator->SetCellularReturnType(
-		FastNoiseSIMD::CellularReturnType::CellValue
-	);
-		
-	cavesTypeNoiseGenerator->SetNoiseType(FastNoiseSIMD::NoiseType::SimplexFractal);
-	cavesTypeNoiseGenerator->SetFractalOctaves(3);
-	cavesTypeNoiseGenerator->SetFrequency(0.05f);
-
 	float *dirtNoise = FastNoiseSIMD::GetEmptySet(w);
 	
 	dirtNoiseGenrator->FillNoiseSet(dirtNoise, 0, 0, 0, w, 1, 1);
@@ -76,19 +67,11 @@ void generateWorld(GameMap &gameMap, int seed)
 
 	float* simplexCavesNoise = FastNoiseSIMD::GetEmptySet(w * h);
 	simplexCavesNoiseGenerator->FillNoiseSet(simplexCavesNoise, 0, 0, 0, h, w, 1); // flipped for some reason
-	
-	float* cellularCavesNoise = FastNoiseSIMD::GetEmptySet(w * h);
-	cellularCavesNoiseGenerator->FillNoiseSet(cellularCavesNoise, 0, 0, 0, h, w, 1); // flipped for some reason
-
-	float* cavesTypeNoise = FastNoiseSIMD::GetEmptySet(w * h);
-	cavesTypeNoiseGenerator->FillNoiseSet(cavesTypeNoise, 0, 0, 0, h, w, 1); // flipped for some reason
 
 	//convert from [-1 1] to [0 1]
 	for (int i = 0; i < w * h; i++)
 	{
 		simplexCavesNoise[i] = (simplexCavesNoise[i] + 1) / 2;		
-		cellularCavesNoise[i] = (cellularCavesNoise[i] + 1) / 2;
-		cavesTypeNoise[i] = (cavesTypeNoise[i] + 1) / 2;
 	}
 
 	// lambda
@@ -97,122 +80,105 @@ void generateWorld(GameMap &gameMap, int seed)
 		return set[x + y * w];
 	};
 
-
-	auto perlinWorms = [&]() 
+	int wormCount = 0;
+	auto spawnPerlinWorm = [&](auto&& self, float startX, float startY, float maxLength, float maxR) -> void
 	{
-		std::cout << "wormin..\n";
-		int wormCount = 20; // maybe some value that makes sense later, based on map size 
+		int maxLen = static_cast<int>(maxLength);
 
+		if (maxLen < 10 || maxR < 1.0f)
+			return;
 
-		// size of the worm has to vary (just a few blocks are ok)
+		float minRadius = std::min(2.2f, maxR * 0.6f);
+		float radius = getRandomFloat(rng, minRadius, maxR);
 
-		// dir of the worm has to vary (doesnt matter)
+		float dirX = getRandomFloat(rng, -1, 1);
+		float dirY = getRandomFloat(rng, -1, 1);
 
-		for(int j = 0; j < wormCount; j++) 
-		{
+		int dirTime = getRandomInt(rng, 5, 40);
 
-			float startX = getRandomInt(rng, 0, w);
-			float startY = getRandomInt(rng, 90, h);
-	
-			float radius = ((
-				getRandomFloat(rng, 2, 5) +
-				getRandomFloat(rng, 2, 5) +
-				getRandomFloat(rng, 2, 7)
-			) / 3);
-	
-			float dirX = getRandomFloat(rng, -1, 1);
-			float dirY = getRandomFloat(rng, -1, 1);
-		
-			int dirTime = getRandomInt(rng, 5, 40);
-		
-			int wormLength = 
-			((
-				getRandomInt(rng, 50, 100) +
-				getRandomInt(rng, 100, 500) +
-				getRandomInt(rng, 200, 700)
-			) / 3);
+		int wormLength = (
+			getRandomInt(rng, std::max(1, static_cast<int>(maxLen * 0.07f)),
+							static_cast<int>(maxLen * 0.4f)) +
 
-			std::cout << "Length: " << wormLength << '\n';
-			
-			
-			float x = startX;
-			float y = startY;
+			getRandomInt(rng, std::max(1, static_cast<int>(maxLen * 0.14f)),
+							static_cast<int>(maxLen * 0.8f)) +
 
-			for(int i = 0; i<wormLength; i++) {
-				
-				// diggin a circle around current pos
-				int intRadius = std::ceil(radius);
+			getRandomInt(rng, std::max(1, static_cast<int>(maxLen * 0.28f)),
+							maxLen)
+		) / 3;
 
-				for(int offX = -intRadius; offX <= intRadius; offX++)
-				{
-					for(int offY = -intRadius; offY <= intRadius; offY++)
-					{
-						float distSq = offX * offX + offY * offY;
+		std::cout << "Length: " << wormLength << '\n';
 
-						if(distSq <= radius*radius)
-						{
-							int digX = x + offX;
-							int digY = y + offY;
+		int childSpawnAt = -1;
 
-							auto b = gameMap.getBlockSafe(digX, digY);
-							if (b)
-							{
-								b->type = Block::air;
-							}
-						}
-
-					}
-				}
-				
-				dirTime--;
-				if (dirTime <= 0)
-				{
-					dirTime = getRandomInt(rng, 5, 20);
-
-					if(getRandomChance(rng, 0.7))
-					{
-						float keepFactor = 0.8;
-						// big chance we keep a very similar direction
-						dirX = dirX * keepFactor + (getRandomFloat(rng, -1, 1)) * (1.f - keepFactor);
-						dirY = dirY * keepFactor + (getRandomFloat(rng, -1, 1)) * (1.f - keepFactor);
-					} 
-					else
-					{
-						float keepFactor = 0.2;
-						// small chance we keep a very similar direction
-						dirX = dirX * keepFactor + (getRandomFloat(rng, -1, 1)) * (1.f - keepFactor);
-						dirY = dirY * keepFactor + (getRandomFloat(rng, -1, 1)) * (1.f - keepFactor);
-					}
-				}
-
-				// Move forward
-				x += dirX * 1.5f;
-				y += dirY * 1.5f;
-				
-				// Random radius wobble
-				radius += (getRandomFloat(rng, -0.2, 0.2));
-				radius = std::clamp(radius, 2.2f, 8.5f);
-			}
-			// set block? 
+		if (getRandomChance(rng, 0.1)) {
+			childSpawnAt = getRandomInt(rng, 0, wormLength - 1);
 		}
+		
+		float x = startX;
+		float y = startY;
 
+		for(int i = 0; i<wormLength; i++) {
+			
+			// diggin a circle around current pos
+			int intRadius = std::ceil(radius);
+
+			for(int offX = -intRadius; offX <= intRadius; offX++)
+			{
+				for(int offY = -intRadius; offY <= intRadius; offY++)
+				{
+					float distSq = offX * offX + offY * offY;
+
+					if(distSq <= radius*radius)
+					{
+						int digX = x + offX;
+						int digY = y + offY;
+
+						auto b = gameMap.getBlockSafe(digX, digY);
+						if (b)
+						{
+							b->type = Block::air;
+						}
+					}
+
+				}
+			}
+			
+			dirTime--;
+			if (dirTime <= 0)
+			{
+				dirTime = getRandomInt(rng, 5, 20);
+
+				if(getRandomChance(rng, 0.7))
+				{
+					float keepFactor = 0.8;
+					// big chance we keep a very similar direction
+					dirX = dirX * keepFactor + (getRandomFloat(rng, -1, 1)) * (1.f - keepFactor);
+					dirY = dirY * keepFactor + (getRandomFloat(rng, -1, 1)) * (1.f - keepFactor);
+				} 
+				else
+				{
+					float keepFactor = 0.2;
+					// small chance we keep a very similar direction
+					dirX = dirX * keepFactor + (getRandomFloat(rng, -1, 1)) * (1.f - keepFactor);
+					dirY = dirY * keepFactor + (getRandomFloat(rng, -1, 1)) * (1.f - keepFactor);
+				}
+			}
+
+			// Move forward
+			x += dirX * 1.5f;
+			y += dirY * 1.5f;
+			
+			// Random radius wobble
+			radius += (getRandomFloat(rng, -0.2, 0.2));
+			radius = std::clamp(radius, minRadius, maxR);
+
+			// 10 percent chance to spawn tinier worm
+			if (i == childSpawnAt) {
+				self(self, x, y, maxLength / 2, maxR / 2);
+			}
+		}
 	};
-
-	/*
-	random start point
-
-	
-	lenght
-	
-	direction (that changes traversing)
-	
-	size 
-
-	scatter around map (maybe spawn based on seed)
-	
-	*/
-
-
 
 	int dirtOffsetStart = -5;
 	int dirtOffsetEnd = 35;
@@ -291,7 +257,6 @@ void generateWorld(GameMap &gameMap, int seed)
 
 	#pragma endregion
 
-
 		int dirtHeight = dirtOffsetStart + (dirtOffsetEnd - dirtOffsetStart) * dirtNoise[x];
 		dirtHeight = stoneHeight - dirtHeight;
 
@@ -347,26 +312,39 @@ void generateWorld(GameMap &gameMap, int seed)
 				}
 			}
 
-			// if(getNoiseXY(x, y, simplexCavesNoise) < 0.3) 
-			// {
-			// 	b.type = Block::air;
-			// }
-
-			// if(lerp(getNoiseXY(x, y, simplexCavesNoise), getNoiseXY(x, y, cellularCavesNoise), getNoiseXY(x, y, cavesTypeNoise)) < 0.2) 
-			// {
-			// 	b.type = Block::air;
-			// }
-			
+			if(getNoiseXY(x, y, simplexCavesNoise) < 0.3) 
+			{
+				b.type = Block::air;
+			}
+		
 			gameMap.getBlockUnsafe(x, y) = b;
 
 		}
 
 	}
-	perlinWorms();
+
+	int count = 0;
+	for (int i = 0; i < w; i += 200)
+	{
+		for (int j = 0; j < h; j += 150)
+		{
+			count++;
+			float startX = i + getRandomFloat(rng, 0, 200/2);
+			float startY = j + getRandomFloat(rng, 0, 150/2);
+
+			startX = std::min(startX, static_cast<float>(w - 1));
+			startY = std::min(startY, static_cast<float>(h - 1));
+
+			spawnPerlinWorm(
+				spawnPerlinWorm, startX, startY, 700, 7.5f
+			);
+		}
+	}
+	std::cout << "blue noise worms: " << count << '\n';
 
 	FastNoiseSIMD::FreeNoiseSet(dirtNoise);
 	FastNoiseSIMD::FreeNoiseSet(simplexCavesNoise);
-	FastNoiseSIMD::FreeNoiseSet(cellularCavesNoise);
-	FastNoiseSIMD::FreeNoiseSet(cavesTypeNoise);
+
+	std::cout << "WORM COUNT: " << wormCount << '\n';
 
 }
