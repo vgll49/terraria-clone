@@ -16,10 +16,13 @@ struct GameData
     GameMap gameMap;
 	Camera2D camera;
 
-	Block selected_block;
+	int creativeSelectedBlock; 
+
 }gameData;
 
 AssetManager assetManager;
+
+bool showImgui = false; 
 
 bool initGame()
 {
@@ -45,6 +48,9 @@ bool updateGame()
 
 	ClearBackground({75, 75, 150, 255});
 
+	if(IsKeyPressed(KEY_F10)) showImgui = !showImgui;
+
+
 	static float CAMERA_SPEED = 100;
 
 #pragma region camera movement
@@ -61,45 +67,50 @@ bool updateGame()
 	int blockX = (int)floor(worldsPos.x);
 	int blockY = (int)floor(worldsPos.y);
 	 
+	if(gameData.creativeSelectedBlock < 0) gameData.creativeSelectedBlock = 0;
+	if(gameData.creativeSelectedBlock >= Block::BLOCKS_COUNT) gameData.creativeSelectedBlock = Block::BLOCKS_COUNT -1;
 
-	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	if(!showImgui) 
 	{
-		// TODO: later adapt this to some kind of mining system. So that IsMouseButtonDown and the layer does not change or some other way
-		if (auto* b = gameData.gameMap.getBlockSafe(blockX, blockY);
-			b && b->type != Block::air)
+
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 		{
-			*b = {};
-		}
-		else if (auto* b = gameData.gameMap.getBlockSafe(
-					blockX, blockY, MapLayer::Background);
+			// TODO: later adapt this to some kind of mining system. So that IsMouseButtonDown and the layer does not change or some other way
+			if (auto* b = gameData.gameMap.getBlockSafe(blockX, blockY);
 				b && b->type != Block::air)
-		{
-			*b = {};
+			{
+				*b = {};
+			}
+			else if (auto* b = gameData.gameMap.getBlockSafe(
+						blockX, blockY, MapLayer::Background);
+					b && b->type != Block::air)
+			{
+				*b = {};
+			}
+
+			std::cout << "Block X: " << blockX
+			<< " | Block Y: " << blockY << '\n';
 		}
 
-		std::cout << "Block X: " << blockX
-          << " | Block Y: " << blockY << '\n';
-	}
-
-	if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-	{
-		uint64_t seed = hashCoordinates(blockX, blockY);
-		std::ranlux24_base rng(seed);
-		int blockVariation = getRandomInt(rng, 0, 3);
-		
-		auto* b = gameData.gameMap.getBlockSafe(blockX, blockY);
-
-		if (isWallBlock(gameData.selected_block.type))
-			b = gameData.gameMap.getBlockSafe(blockX, blockY, MapLayer::Background);
-
-		if (b)
+		if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 		{
-			b->type = gameData.selected_block.type;
-			b->variation = blockVariation;
+			uint64_t seed = hashCoordinates(blockX, blockY);
+			std::ranlux24_base rng(seed);
+			int blockVariation = getRandomInt(rng, 0, 3);
+			
+			auto* b = gameData.gameMap.getBlockSafe(blockX, blockY);
+
+			if (isWallBlock(gameData.creativeSelectedBlock))
+				b = gameData.gameMap.getBlockSafe(blockX, blockY, MapLayer::Background);
+
+			if (b)
+			{
+				b->type = gameData.creativeSelectedBlock;
+				b->variation = blockVariation;
+			}
 		}
 	}
-	
-	
+
 	BeginMode2D(gameData.camera);
 
 	Vector2 topLeftView = GetScreenToWorld2D({0,0}, gameData.camera);
@@ -210,25 +221,44 @@ bool updateGame()
 
 	EndMode2D();
 
-	ImGui::Begin("Debug Stuff");
-                
-    ImGui::InputInt("Block", (int *)&gameData.selected_block.type);
-	
-	
-	if(ImGui::Button("Background Block")) {
-		gameData.selected_block.type = Block::BLOCKS_COUNT-1;
-	}
+	if(showImgui) 
+		{
 
-	if (gameData.selected_block.type > Block::BLOCKS_COUNT-1) 
-		gameData.selected_block.type = Block::BLOCKS_COUNT-1;
+		ImGui::Begin("Debug Stuff");
+					
+		for(int i = 0; i<Block::BLOCKS_COUNT; i++) 
+		{
+			auto atlas = getTextureAtlas(i, 0, 32, 32);
+			atlas.x /= assetManager.textures.width;
+			atlas.width /= assetManager.textures.width;
+			atlas.y /= assetManager.textures.height;
+			atlas.height /= assetManager.textures.height;
 
-	if (gameData.selected_block.type < 1)
-		gameData.selected_block.type = 1;
+			ImGui::PushID(i);
 
-	ImGui::SliderFloat("Camera zoom:", &gameData.camera.zoom, 10, 150);
-	ImGui::SliderFloat("Camera speed:", &CAMERA_SPEED, 5, 100);
+			ImTextureID tex = (ImTextureID)(intptr_t)assetManager.textures.id;
+			if(ImGui::ImageButton(
+				tex, {35,35}, {atlas.x, atlas.y}, {atlas.x + atlas.width, atlas.y+atlas.height} 	
+				))
+			{
+				gameData.creativeSelectedBlock = i;
+			}
 
-	ImGui::End();
+			ImGui::PopID();
+
+			if(i % 10 != 0)
+			{
+				ImGui::SameLine();
+			}
+		}
+
+		ImGui::NewLine();
+		ImGui::SliderFloat("Camera zoom:", &gameData.camera.zoom, 10, 150);
+		ImGui::SliderFloat("Camera speed:", &CAMERA_SPEED, 5, 100);
+
+		ImGui::End();
+
+		}
 	
 	DrawFPS(10, 10);
 
