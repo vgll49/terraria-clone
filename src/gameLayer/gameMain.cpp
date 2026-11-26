@@ -17,16 +17,27 @@ struct GameData
 	Camera2D camera;
 
 	int creativeSelectedBlock; 
-
 }gameData;
 
 AssetManager assetManager;
 
 bool showImgui = false; 
 
+int getBlockVariation(int x, int y, int blockType)
+{
+	// TODO: use this in map init aswell, move into header before
+    uint64_t seed = hashCoordinates(x, y);
+
+    // Make different block types generate different variations.
+    seed ^= static_cast<uint64_t>(blockType) * 0x9E3779B97F4A7C15ULL;
+
+    std::ranlux24_base rng(seed);
+
+    return getRandomInt(rng, 0, 3);
+}
+
 bool initGame()
 {
-
     assetManager.loadAll();
 
 	generateWorld(gameData.gameMap);
@@ -35,7 +46,7 @@ bool initGame()
 	gameData.camera.target = {20, 120}; // world-space center of view
 	gameData.camera.rotation = 0.0f;
 	gameData.camera.zoom = 10.0f;
-
+	
     return true;
 }
 
@@ -96,7 +107,6 @@ bool updateGame()
 		{
 			uint64_t seed = hashCoordinates(blockX, blockY);
 			std::ranlux24_base rng(seed);
-			int blockVariation = getRandomInt(rng, 0, 3);
 			
 			auto* b = gameData.gameMap.getBlockSafe(blockX, blockY);
 
@@ -106,7 +116,22 @@ bool updateGame()
 			if (b)
 			{
 				b->type = gameData.creativeSelectedBlock;
-				b->variation = blockVariation;
+				b->variation = getBlockVariation(
+					blockX,
+					blockY,
+					gameData.creativeSelectedBlock
+				);
+			}
+		}
+
+		if(IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))//IsKeyDown(KEY_LEFT_CONTROL) && IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+		{
+			// do stuff with block
+			auto* b = gameData.gameMap.getBlockSafe(blockX, blockY);
+
+			if(b)
+			{
+				gameData.creativeSelectedBlock = gameData.gameMap.getBlockSafe(blockX, blockY)->type;
 			}
 		}
 	}
@@ -209,15 +234,32 @@ bool updateGame()
 				}
 			}
 		}
+	
+
 
 	DrawTexturePro(
-		assetManager.frame,
-		{0,0, (float)assetManager.frame.width, (float)assetManager.frame.height}, //source
+		assetManager.textures,
+		getTextureAtlas(gameData.creativeSelectedBlock, getBlockVariation(
+			blockX,
+			blockY,
+			gameData.creativeSelectedBlock
+		), 32, 32), //source
 		{(float)blockX, (float)blockY, 1, 1}, //dest
 		{0, 0},// origin (top-left corner)
 		0.0f, // rotation
-		WHITE // tint
+		(Color){ 255, 255, 255, 128 } // 50% opacity // tint
 	);
+	
+	if(gameData.creativeSelectedBlock == 0) {
+		DrawTexturePro(
+			assetManager.frame,
+			{0,0, (float)assetManager.frame.width, (float)assetManager.frame.height}, //source
+			{(float)blockX, (float)blockY, 1, 1}, //dest
+			{0, 0},// origin (top-left corner)
+			0.0f, // rotation
+			WHITE // tint
+		);
+	}
 
 	EndMode2D();
 

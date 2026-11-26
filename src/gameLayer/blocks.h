@@ -127,3 +127,4 @@ inline bool isWallBlock(std::uint16_t type)
             return false;
     }
 }
+
