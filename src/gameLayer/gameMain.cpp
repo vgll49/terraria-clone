@@ -10,6 +10,8 @@
 #include <fstream>
 #include <imgui.h>
 #include <worldGenerator.h>
+#include <structure.h>
+#include <saveMap.h>
 
 struct GameData 
 {
@@ -17,6 +19,12 @@ struct GameData
 	Camera2D camera;
 
 	int creativeSelectedBlock; 
+
+	Vector2 selectionStart = {};
+	Vector2 selectionEnd = {};
+	Structure copyStructure;
+
+	char saveName[100] = {};
 }gameData;
 
 AssetManager assetManager;
@@ -80,6 +88,30 @@ bool updateGame()
 	 
 	if(gameData.creativeSelectedBlock < 0) gameData.creativeSelectedBlock = 0;
 	if(gameData.creativeSelectedBlock >= Block::BLOCKS_COUNT) gameData.creativeSelectedBlock = Block::BLOCKS_COUNT -1;
+
+	// selection
+	if (showImgui)
+	{
+
+		if (IsKeyPressed(KEY_ONE)) gameData.selectionStart = Vector2{(float)blockX, (float)blockY}; 
+		if (IsKeyPressed(KEY_TWO)) gameData.selectionEnd = Vector2{(float)blockX, (float)blockY}; 
+		if (IsKeyPressed(KEY_THREE))
+		{
+			gameData.copyStructure.pasteIntoMap(gameData.gameMap, Vector2{(float)blockX, (float)blockY});
+		}
+
+		if (gameData.selectionStart.x > gameData.selectionEnd.x)
+		{
+			std::swap(gameData.selectionStart.x, gameData.selectionEnd.x);
+		}
+
+		if (gameData.selectionStart.y > gameData.selectionEnd.y)
+		{
+			std::swap(gameData.selectionStart.y, gameData.selectionEnd.y);
+		}
+
+
+	}
 
 	if(!showImgui) 
 	{
@@ -261,12 +293,64 @@ bool updateGame()
 		);
 	}
 
+	// show the structure selection
+	if (showImgui)
+	{
+		Rectangle rect;
+		rect.x = gameData.selectionStart.x;
+		rect.y = gameData.selectionStart.y;
+		rect.width = gameData.selectionEnd.x - gameData.selectionStart.x;
+		rect.height = gameData.selectionEnd.y - gameData.selectionStart.y;
+
+		rect.width++;
+		rect.height++;
+
+		DrawRectangleLinesEx(rect, 0.1,
+			{20, 101, 250, 145});
+	}
+
 	EndMode2D();
 
 	if(showImgui) 
 		{
 
 		ImGui::Begin("Debug Stuff");
+
+		ImGui::SliderFloat("Camera zoom:", &gameData.camera.zoom, 10, 150);
+		ImGui::SliderFloat("Camera speed:", &CAMERA_SPEED, 5, 100);
+
+		if (ImGui::Button("Copy"))
+		{
+			gameData.copyStructure.copyFromMap(gameData.gameMap,
+				gameData.selectionStart, gameData.selectionEnd);
+		}
+
+		ImGui::InputText("File name", gameData.saveName, sizeof(gameData.saveName));
+
+		if (ImGui::Button("Save to file"))
+		{
+			std::string path = RESOURCES_PATH "structures/";
+			path += gameData.saveName;
+			path += ".bin";
+
+			saveBlockDataToFile(gameData.copyStructure.mapData,
+				gameData.copyStructure.w, gameData.copyStructure.h,
+				path.c_str());
+		}
+
+		if (ImGui::Button("Load from file"))
+		{
+			std::string path = RESOURCES_PATH "structures/";
+			path += gameData.saveName;
+			path += ".bin";
+
+			loadBlockDataFromFile(gameData.copyStructure.mapData,
+				gameData.copyStructure.w, gameData.copyStructure.h,
+				path.c_str());
+		}
+
+
+		ImGui::Separator();
 					
 		for(int i = 0; i<Block::BLOCKS_COUNT; i++) 
 		{
@@ -294,9 +378,7 @@ bool updateGame()
 			}
 		}
 
-		ImGui::NewLine();
-		ImGui::SliderFloat("Camera zoom:", &gameData.camera.zoom, 10, 150);
-		ImGui::SliderFloat("Camera speed:", &CAMERA_SPEED, 5, 100);
+
 
 		ImGui::End();
 
