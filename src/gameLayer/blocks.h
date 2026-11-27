@@ -94,6 +94,13 @@ struct Block
 	std::uint8_t variation = 0;
 
 
+	void sanitize()
+	{
+		if(type >= BLOCKS_COUNT)
+		{
+			type = 0;
+		}
+	}
 };
 
 inline bool isWallBlock(std::uint16_t type)
@@ -127,4 +134,3 @@ inline bool isWallBlock(std::uint16_t type)
             return false;
     }
 }
-
